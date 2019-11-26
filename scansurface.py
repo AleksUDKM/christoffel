@@ -24,17 +24,22 @@ along with Christoffel.  If not, see <http://www.gnu.org/licenses/>.
 
 import christoffel
 import numpy as np
-import ConfigParser
+import configparser
 
-print 'Reading data and settings from the sound.in file.'
-config = ConfigParser.ConfigParser()
+print ('Reading data and settings from the sound.in file.')
+config = configparser.ConfigParser()
 config.read('sound.in')
 
 # An error in reading the tensor or density should crash the script.
 # Can't do anything without a stiffness tensor.
-stiffness_tensor = map(float, config.get('SCAN', 'stiffness').split())
-stiffness_tensor = np.reshape(stiffness_tensor, (6, 6))
 
+List = config.get('SCAN', 'stiffness').split()
+stiffness_vector = np.zeros((36,1))
+stiffness_tensor = np.zeros((6,6))
+
+for i in range(36):
+        stiffness_vector[i] = float(List[i])
+stiffness_tensor = np.reshape(stiffness_vector, (6, 6))
 density = config.getfloat('SCAN', 'density') #kg/m^3
 
 # Creation of the central Christoffel object
@@ -65,20 +70,20 @@ except:
     num_theta = 0
     total_num_phi = 0
 
-print 'Data read and Christoffel object created.\n'
-
+print('Data read and Christoffel object created.\n')
+#%%
 #Dump the data that has been read
 statusfile = open('sound.out', 'w')
 
 statusfile.write('Density: {0:.2f} kg/m^3\n\n'.format(chris.density))
 statusfile.write('Stiffness tensor in GPa:\n')
-for i in xrange(6):
+for i in range(6):
     statusfile.write('{0:8.2f} {1:8.2f} {2:8.2f} {3:8.2f} {4:8.2f} {5:8.2f}\n'.format(*(chris.stiffness2D[i])))
 
 chris.rotate_tensor(x_dir=xdir, z_dir=zdir)
 
 statusfile.write('\nRotated stiffness tensor in GPa:\n')
-for i in xrange(6):
+for i in range(6):
     statusfile.write('{0:8.2f} {1:8.2f} {2:8.2f} {3:8.2f} {4:8.2f} {5:8.2f}\n'.format(*(chris.stiffness2D[i])))
 
 statusfile.write('\nBulk modulus: {0:.2f} GPa\n'.format(chris.bulk))
@@ -123,7 +128,7 @@ minangle = [[0.0, 0.0], [0.0, 0.0], [0.0, 0.0]]
 #Get the isotropic velocities
 iso_vel = chris.get_isotropic()
 
-print 'Calculating phase velocities in user-defined directions.'
+print('Calculating phase velocities in user-defined directions.')
 #Loop over user-defined directions
 direction_file = open('directions.dat', 'w')
 for q in directions:
@@ -136,19 +141,19 @@ for q in directions:
     direction_file.write(' Secondary 2: ' + str(velocity[0]) + ' km/s\n')
     direction_file.write(' Secondary avg: ' + str(0.5*(velocity[0]+velocity[1])) + ' km/s\n\n')
 direction_file.close()
-print 'The directions.dat file has been successfully written.'
+print('The directions.dat file has been successfully written.')
 
-print 'Looping over surface.'
+print('Looping over surface.')
 #Loop over surface
-for theta in xrange(num_theta):
-    print str(theta+1) + '/' + str(num_theta)
+for theta in range(num_theta):
+    print(str(theta+1) + '/' + str(num_theta))
     num_phi = total_num_phi
     #This commented bit scales num_phi by sin(theta) to get a constant sampling density
     #Sadly, GNUPlot doesn't play nice with grids that aren't rectangular
     #Still, if you want to cut your runtime down significantly, use the next two lines
     #sin_theta = np.sin(0.5*np.pi*theta / (num_theta - 1))
     #num_phi = int(np.ceil(sin_theta*total_num_phi)) + 1
-    for phi in xrange(num_phi):
+    for phi in range(num_phi):
         chris.set_direction_spherical(0.5*np.pi*theta/(num_theta-1), 2.0*np.pi*phi/ (num_phi-1))
         q = chris.direction
         cubepos = q/np.linalg.norm(q, ord=np.inf)
@@ -162,7 +167,7 @@ for theta in xrange(num_theta):
         pf_angle = chris.get_powerflow()
 
         #Check for fastest and slowest velocities
-        for i in xrange(3):
+        for i in range(3):
             if velocity[i] > maxvel[i]:
                 maxvel[i] = velocity[i]
                 maxdir[i] = q
@@ -185,7 +190,7 @@ SS_outfile.close()
 FS_outfile.close()
 P_outfile.close()
 
-print 'Calculating anisotropy.'
+print('Calculating anisotropy.')
 
 #Rounding gives nicer output
 maxdir = np.around(maxdir, 10)
@@ -221,4 +226,4 @@ anisotropy_file.write('Secondary Anisotropy: ' + str(100*(1.0 - minvel[0]/maxvel
 
 anisotropy_file.close()
 
-print 'All done!'
+print('All done!')
